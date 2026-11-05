@@ -21,6 +21,15 @@
   --foreground: var(--ink);
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --gsd-ink: #eaf3ef;
+  --gsd-paper: #12282e;
+  --gsd-line: #365157;
+  --gsd-muted: #b0c5bf;
+  --paper: #1b353b;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -55,6 +64,31 @@ body {
   background: color-mix(in srgb, var(--signal) 28%, white);
   color: var(--ink);
 }
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 35px;
+  padding: 5px 9px;
+  border: 1px solid var(--gsd-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gsd-muted);
+  font: 700 12px var(--font-body-face), sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.theme-toggle:hover { background: #dfe9e4; color: var(--gsd-ink); }
+.theme-toggle:focus-visible { outline: 2px solid var(--gsd-blue); outline-offset: 2px; }
+.theme-toggle-moon, .theme-toggle-sun { font-size: 18px; line-height: 1; }
+.theme-toggle-sun, .theme-toggle-light-label { display: none; }
+:root[data-theme="dark"] .theme-toggle-moon,
+:root[data-theme="dark"] .theme-toggle-dark-label { display: none; }
+:root[data-theme="dark"] .theme-toggle-sun,
+:root[data-theme="dark"] .theme-toggle-light-label { display: inline; }
+:root[data-theme="dark"] .theme-toggle:hover { background: #29474d; }
 
 @keyframes gsd-rise {
   from {
@@ -280,4 +314,58 @@ body {
   .home-close > .home-wrap { align-items: start; flex-direction: column; }
   .home-footer > .home-wrap { gap: 15px; }
   .home-footer span:last-child { text-align: right; }
+}
+
+/* Keep the public pages and private workspace on the same night palette. */
+:root[data-theme="dark"] .home-page,
+:root[data-theme="dark"] .home-hero,
+:root[data-theme="dark"] .home-corners { background: var(--gsd-paper); }
+:root[data-theme="dark"] .home-header,
+:root[data-theme="dark"] .home-how,
+:root[data-theme="dark"] .home-footer { background: #1b353b; border-color: var(--gsd-line); }
+:root[data-theme="dark"] .home-logo { color: var(--gsd-ink); }
+:root[data-theme="dark"] .home-header nav a { color: #bfd3cb; }
+:root[data-theme="dark"] .home-header nav a:hover { color: #fff; }
+:root[data-theme="dark"] .home-header nav .home-nav-button { background: #346fa9; color: #fff; }
+:root[data-theme="dark"] .home-header nav .home-nav-button:hover { background: #4384c1; }
+:root[data-theme="dark"] .home-overline,
+:root[data-theme="dark"] .home-secondary { color: #9bc5bc; }
+:root[data-theme="dark"] .home-hero h1 em { color: #8abbed; }
+:root[data-theme="dark"] .home-hero-copy > p,
+:root[data-theme="dark"] .home-section-intro p,
+:root[data-theme="dark"] .home-steps p,
+:root[data-theme="dark"] .home-corner p { color: #b0c5bf; }
+:root[data-theme="dark"] .home-demo { background: #1b353b; border-color: var(--gsd-line); box-shadow: 12px 12px 0 #0d2126; }
+:root[data-theme="dark"] .home-demo-top,
+:root[data-theme="dark"] .home-demo-note { color: #b2cbc3; }
+:root[data-theme="dark"] .home-demo blockquote,
+:root[data-theme="dark"] .home-demo-row { color: var(--gsd-ink); }
+:root[data-theme="dark"] .home-demo-divider,
+:root[data-theme="dark"] .home-demo-row,
+:root[data-theme="dark"] .home-steps > div { border-color: var(--gsd-line); }
+:root[data-theme="dark"] .home-demo-divider span { background: #1b353b; color: #a7c0b9; }
+:root[data-theme="dark"] .home-demo-row small { color: #b1c6bf; }
+:root[data-theme="dark"] .home-demo-date { color: #173b42; box-shadow: 5px 5px 0 #0d2126; }
+:root[data-theme="dark"] .home-steps > div:nth-child(1) span { background: #25505a; color: #b8e1e4; }
+:root[data-theme="dark"] .home-steps > div:nth-child(2) span { background: #51402b; color: #f4ce92; }
+:root[data-theme="dark"] .home-steps > div:nth-child(3) span { background: #2d4765; color: #bdd5f2; }
+:root[data-theme="dark"] .home-corner { background: #28443e; border-color: #41635a; }
+:root[data-theme="dark"] .home-corner-finance { background: #433528; border-color: #73553b; }
+:root[data-theme="dark"] .home-corner-journal { background: #21464d; border-color: #3a6971; }
+:root[data-theme="dark"] .home-corner-work { background: #263d5b; border-color: #425a7b; }
+:root[data-theme="dark"] .home-corner-health { background: #224739; border-color: #3b6953; }
+:root[data-theme="dark"] .home-corner-groceries { background: #493533; border-color: #704d49; }
+:root[data-theme="dark"] .home-corner-kids { background: #463f2b; border-color: #6b603b; }
+:root[data-theme="dark"] .home-close { background: #0c2228; }
+:root[data-theme="dark"] .home-close p,
+:root[data-theme="dark"] .home-footer span:last-child { color: #b7cec6; }
+:root[data-theme="dark"] .home-close .home-primary { color: #173b42; }
+
+@media (max-width: 620px) {
+  .home-header nav { gap: 10px; }
+  .home-header .theme-toggle { width: 36px; padding: 5px; }
+  .home-header .theme-toggle-dark-label,
+  .home-header .theme-toggle-light-label,
+  :root[data-theme="dark"] .home-header .theme-toggle-light-label { display: none; }
+  .home-header nav .home-nav-button { padding: 10px 12px; }
 }

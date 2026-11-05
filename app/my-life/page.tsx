@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { hasDashboardSession } from "@/lib/auth/session";
 import { getLifeHistory, getLifeRange } from "@/lib/life/store";
 import { listCategories } from "@/lib/life/categories";
@@ -54,7 +55,7 @@ export default async function MyLife({ searchParams }: PageProps<"/my-life">) {
   const authenticated = await hasDashboardSession();
   if (!authenticated) return (
     <main className="life-login">
-      <Link href="/" className="life-brand">GSD<span className="life-brand-dot">.</span></Link>
+      <div className="life-login-header"><Link href="/" className="life-brand">GSD<span className="life-brand-dot">.</span></Link><ThemeToggle/></div>
       <div className="life-login-card">
         <div className="life-lock" aria-hidden="true">✳</div>
         <p className="life-kicker">Your private space</p>
@@ -75,7 +76,7 @@ export default async function MyLife({ searchParams }: PageProps<"/my-life">) {
   const today = todayInBrussels(now);
   const weekFrom = daysBefore(today, 6);
   const period = await loadPeriod(params, today, weekFrom);
-  if (!period) return <div className="life-shell"><aside className="life-sidebar"><Link href="/" className="life-brand">GSD<span className="life-brand-dot">.</span></Link></aside><main className="life-main"><header className="life-topbar">My Life</header><div className="life-content"><div className="life-heading"><div><h1>My Life</h1><p>Your private dashboard</p></div></div><div className="life-empty"><div>✳</div><h3>Data is not available yet</h3><p>Check the GSD MongoDB connection in this Vercel project, then refresh this page.</p></div></div></main></div>;
+  if (!period) return <div className="life-shell"><aside className="life-sidebar"><Link href="/" className="life-brand">GSD<span className="life-brand-dot">.</span></Link></aside><main className="life-main"><header className="life-topbar"><span>My Life</span><ThemeToggle/></header><div className="life-content"><div className="life-heading"><div><h1>My Life</h1><p>Your private dashboard</p></div></div><div className="life-empty"><div>✳</div><h3>Data is not available yet</h3><p>Check the GSD MongoDB connection in this Vercel project, then refresh this page.</p></div></div></main></div>;
   const { history, categories, hasMultipleDays, weekHasHistory, view, day, from, to, entries, facts } = period;
   const selectedCategory = typeof params.area === "string" ? categories.find((category) => category._id === params.area) : undefined;
   const area = selectedCategory?._id;
@@ -133,7 +134,7 @@ export default async function MyLife({ searchParams }: PageProps<"/my-life">) {
           <div className="life-sidebar-bottom"><span className="life-online-dot" /> Private workspace <form action="/api/session/logout" method="post"><button type="submit">Sign out</button></form></div>
         </aside>
         <main className="life-main">
-          <header className="life-topbar"><span><strong>My Life</strong> / {selectedCategory?.name ?? "Overview"}</span><div className="life-topbar-actions"><span>{timeInBrussels(now)} Brussels</span><a href={href(area)}>Refresh ↻</a><Link href="/">About GSD</Link></div></header>
+          <header className="life-topbar"><span><strong>My Life</strong> / {selectedCategory?.name ?? "Overview"}</span><div className="life-topbar-actions"><span>{timeInBrussels(now)} Brussels</span><a href={href(area)}>Refresh ↻</a><ThemeToggle/><Link href="/">About GSD</Link></div></header>
           <div className="life-content">
             <div className="life-heading">
               <div className="life-heading-copy"><p className="life-eyebrow"><span className="life-pulse" />{periodLabel}</p><h1>{selectedCategory?.name ?? (view === "today" ? "Today, so far." : periodTitle)}</h1><p>{selectedCategory ? selectedCategory.description : "One place for what you said, what happened, and what matters next."}</p><span className="life-heading-foot">{entries.length} {entries.length === 1 ? "note" : "notes"} saved <i /> As of {timeInBrussels(now)} Brussels time</span></div>
