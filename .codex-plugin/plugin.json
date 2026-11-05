@@ -1,0 +1,6 @@
+{
+  "name": "getshitdone",
+  "version": "0.1.0",
+  "description": "Personal productivity skills that take action in your apps — starting with finance expense logging.",
+  "skills": "./skills/"
+}
