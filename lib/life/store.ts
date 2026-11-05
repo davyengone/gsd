@@ -51,7 +51,7 @@ export async function captureLife(input: CaptureInput) {
     return { entry: { ...entry, extractionStatus: "complete" as const }, facts, duplicate };
   } catch (error) {
     const details = error && typeof error === "object" ? error as { statusCode?: number; status?: number; code?: string } : {};
-    logMcp("error", "life.extraction_failed", { entryId: entry._id, errorType: error instanceof Error ? error.name : "unknown", errorCode: details.code, statusCode: details.statusCode ?? details.status, provider: process.env.ANTHROPIC_API_KEY ? "anthropic-direct" : "anthropic-gateway" });
+    logMcp("error", "life.extraction_failed", { entryId: entry._id, errorType: error instanceof Error ? error.name : "unknown", errorCode: details.code, statusCode: details.statusCode ?? details.status, provider: "anthropic" });
     await entries.updateOne({ _id: entry._id }, { $set: { extractionStatus: "failed" } });
     return { entry: { ...entry, extractionStatus: "failed" as const }, facts: [], duplicate };
   }

@@ -22,7 +22,7 @@ Required environment variables:
 | --- | --- |
 | `GSD_MCP_TOKEN` | Private token of at least 32 characters, used in the MCP URL and to unlock `/my-life`. |
 | `MONGODB_URI` | MongoDB connection URI with read and write access to the GSD database. |
-| `ANTHROPIC_API_KEY` | Anthropic API key for direct extraction through the AI SDK. Without it, GSD attempts Anthropic through Vercel AI Gateway, which may require paid Gateway credits. |
+| `ANTHROPIC_API_KEY` | Anthropic API key for extraction through the Vercel AI SDK's Anthropic provider. |
 
 Optional: `MONGODB_DB` (default `gsd`), `GSD_EXTRACTION_MODEL` (default `claude-sonnet-4-6` for the direct Anthropic provider).
 
@@ -46,4 +46,4 @@ The dashboard at `/my-life` asks for `GSD_MCP_TOKEN` once and sets an HTTP-only 
 
 ## Local verification
 
-Run `npx @modelcontextprotocol/inspector`, select Streamable HTTP, and connect to `http://localhost:3000/api/mcp/<GSD_MCP_TOKEN>`. Verify initialization, the three tools, an invalid-token `404`, a capture, and a date summary. A successful write requires both MongoDB and AI Gateway configuration.
+Run `npx @modelcontextprotocol/inspector`, select Streamable HTTP, and connect to `http://localhost:3000/api/mcp/<GSD_MCP_TOKEN>`. Verify initialization, the three tools, an invalid-token `404`, a capture, and a date summary. A successful write requires both MongoDB and Anthropic configuration.
