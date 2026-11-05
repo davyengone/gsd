@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const display = Space_Grotesk({
@@ -30,9 +31,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${display.variable} ${body.variable} ${mono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-mist text-ink">{children}</body>
+      <body className="min-h-full flex flex-col bg-mist text-ink">
+        <Script id="gsd-theme-init" strategy="beforeInteractive">
+          {`try{if(localStorage.getItem('gsd-theme')==='dark')document.documentElement.dataset.theme='dark'}catch{}`}
+        </Script>
+        {children}
+      </body>
     </html>
   );
 }
