@@ -1,3 +1,4 @@
+import { AreaIcon } from "@/components/AreaIcon";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { hasDashboardSession } from "@/lib/auth/session";
@@ -19,8 +20,7 @@ function factAmount(fact: LifeFact) {
 }
 
 function FactIcon({ area, name }: { area: string; name: string }) {
-  const glyph: Record<string, string> = { finance: "€", journal: "✎", work: "▣", health: "✦", groceries: "◒", kids: "♡" };
-  return <div className={`life-feed-icon ${area}`} aria-hidden="true">{glyph[area] ?? name.slice(0, 1).toUpperCase()}</div>;
+  return <div className={`life-feed-icon ${area}`} aria-hidden="true"><AreaIcon area={area} fallback={name.slice(0, 1).toUpperCase()} /></div>;
 }
 
 type FeedItem =
@@ -164,8 +164,7 @@ export default async function MyLife({ searchParams }: PageProps<"/my-life">) {
 
             {!area && <section className="life-areas"><div className="life-section-heading"><div><p className="life-section-kicker">Everything has a place</p><h2>Your areas</h2></div><span>{activeCategories} of {categories.length} active this period</span></div><div className="life-area-grid">{categories.map((category) => {
               const latest = category._id === "journal" ? entries[0]?.text : facts.find((fact) => fact.area === category._id)?.title;
-              const symbol: Record<string, string> = { finance: "€", journal: "✳", work: "↗", health: "+", groceries: "◒", kids: "♡" };
-              return <Link href={href(category._id)} className={`life-area life-area-${category._id}`} key={category._id}><span className="life-area-symbol" aria-hidden="true">{symbol[category._id] ?? category.name.slice(0, 1).toUpperCase()}</span><span className="life-area-count">{counts[category._id]} {counts[category._id] === 1 ? "record" : "records"}</span><h3>{category.name}</h3><p>{latest ?? "Ready for your next update"}</p><b aria-hidden="true">↗</b></Link>;
+              return <Link href={href(category._id)} className={`life-area life-area-${category._id}`} key={category._id}><span className="life-area-symbol" aria-hidden="true"><AreaIcon area={category._id} fallback={category.name.slice(0, 1).toUpperCase()} /></span><span className="life-area-count">{counts[category._id]} {counts[category._id] === 1 ? "record" : "records"}</span><h3>{category.name}</h3><p>{latest ?? "Ready for your next update"}</p><b aria-hidden="true">↗</b></Link>;
             })}</div></section>}
 
             <div className={`life-lower-grid${area && area !== "finance" ? " life-lower-grid-single" : ""}`}>
