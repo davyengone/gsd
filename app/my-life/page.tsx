@@ -167,7 +167,7 @@ export default async function MyLife({ searchParams }: PageProps<"/my-life">) {
               return <Link href={href(category._id)} className={`life-area life-area-${category._id}`} key={category._id}><span className="life-area-symbol" aria-hidden="true">{symbol[category._id] ?? category.name.slice(0, 1).toUpperCase()}</span><span className="life-area-count">{counts[category._id]} {counts[category._id] === 1 ? "record" : "records"}</span><h3>{category.name}</h3><p>{latest ?? "Ready for your next update"}</p><b aria-hidden="true">↗</b></Link>;
             })}</div></section>}
 
-            <div className="life-lower-grid">
+            <div className={`life-lower-grid${area && area !== "finance" ? " life-lower-grid-single" : ""}`}>
 
             {(!area || area === "finance") && <section className="life-spending"><div className="life-section-heading"><div><p className="life-section-kicker">A closer look</p><h2>Spending</h2></div><span>{expenses.length} recorded</span></div>
               <div className="life-spending-card">
