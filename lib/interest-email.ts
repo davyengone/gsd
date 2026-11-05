@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 const RESEND_EMAILS_URL = "https://api.resend.com/emails";
-const BOOTCAMP_URL = "https://www.hackages.com/6days6project";
+const BOOTCAMP_URL = "https://hackages.com/6-days-6-projects";
 
 function escapeHtml(value: string) {
   return value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
@@ -32,7 +32,7 @@ export async function sendInterestEmails(email: string, request: typeof fetch = 
 
   const key = createHash("sha256").update(email).digest("hex").slice(0, 32);
   const day = now.toISOString().slice(0, 10);
-  const confirmation = await sendEmail(apiKey, `gsd-interest-confirm/${day}/${key}`, {
+  const confirmation = await sendEmail(apiKey, `gsd-interest-confirm/v2/${day}/${key}`, {
     from,
     to: [email],
     subject: "Thanks for your interest in GSD",
