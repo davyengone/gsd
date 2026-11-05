@@ -50,31 +50,6 @@ export function sanitizeForLog(value: unknown, depth = 0): unknown {
   return value;
 }
 
-function summarizeResult(result: unknown): unknown {
-  if (!isPlainObject(result)) return sanitizeForLog(result);
-
-  // Prefer structuredContent when present (tool results).
-  if ("structuredContent" in result) {
-    return {
-      structuredContent: sanitizeForLog(result.structuredContent),
-      isError: result.isError === true,
-      contentPreview: Array.isArray(result.content)
-        ? sanitizeForLog(
-            result.content
-              .map((part) =>
-                isPlainObject(part) && typeof part.text === "string"
-                  ? part.text
-                  : part,
-              )
-              .slice(0, 3),
-          )
-        : undefined,
-    };
-  }
-
-  return sanitizeForLog(result);
-}
-
 export function logMcp(
   level: LogLevel,
   message: string,
@@ -128,23 +103,21 @@ export function handleMcpEvent(event: McpLogEvent): void {
       context: event.context,
       error:
         event.error instanceof Error
-          ? { name: event.error.name, message: event.error.message }
-          : String(event.error),
+          ? { name: event.error.name }
+          : "unknown",
     });
     return;
   }
 
-  const toolName =
-    event.method === "tools/call" && isPlainObject(event.parameters)
-      ? event.parameters.name
-      : undefined;
+  const params = isPlainObject(event.parameters) && isPlainObject(event.parameters.params)
+    ? event.parameters.params : undefined;
+  const toolName = event.method === "tools/call" ? params?.name : undefined;
 
   if (event.type === "REQUEST_RECEIVED") {
     logMcp("info", "mcp.request", {
       eventType: event.type,
       method: event.method,
       tool: toolName,
-      parameters: sanitizeForLog(event.parameters),
     });
     return;
   }
@@ -155,6 +128,5 @@ export function handleMcpEvent(event: McpLogEvent): void {
     tool: toolName,
     status: event.status,
     durationMs: event.duration,
-    result: summarizeResult(event.result),
   });
 }
