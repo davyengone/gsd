@@ -30,11 +30,11 @@ Create a private token with `openssl rand -base64 32 | tr '+/' '-_' | tr -d '='`
 
 ## Connect in ChatGPT
 
-After deploying to `gsd.davy.build`, add a custom MCP server in ChatGPT Plugins with this **Streamable HTTP** URL:
+The custom MCP plugin is installed in ChatGPT as **askDavy**. For another ChatGPT account, add a custom MCP server with this **Streamable HTTP** URL:
 
 `https://gsd.davy.build/api/mcp/<GSD_MCP_TOKEN>`
 
-Choose **No authentication** for this private, single-user connection; the URL token is the credential. Install the plugin in a conversation. Say “Use GSD to capture this day: …”, then ask “Use GSD: how much did 2026-11-05 cost?” ChatGPT may ask to confirm the write action. A plugin tool is selected by the model when relevant; GSD does not receive every ChatGPT message in the background.
+Choose **No authentication** for this private, single-user connection; the URL token is the credential. Connect the plugin in ChatGPT. Say “Use askDavy to capture this day: …”, then ask “Use askDavy: how much did 2026-11-05 cost?” ChatGPT may ask to confirm the write action. A plugin tool is selected by the model when relevant; GSD does not receive every ChatGPT message in the background.
 
 Available tools:
 
