@@ -1,15 +1,12 @@
 import Link from "next/link";
 import { hasDashboardSession } from "@/lib/auth/session";
 import { getLifeHistory, getLifeRange } from "@/lib/life/store";
-import { areas, type Area, type LifeEntry, type LifeFact } from "@/lib/life/schema";
+import { listCategories } from "@/lib/life/categories";
+import type { LifeCategory, LifeEntry, LifeFact } from "@/lib/life/schema";
 import { capturedTime, dateInBrussels, daysBefore, displayDate, timeInBrussels, todayInBrussels, validDate } from "@/lib/life/dates";
 import "./style.css";
 
 export const dynamic = "force-dynamic";
-
-const labels: Record<Area, string> = {
-  finance: "Finance", journal: "Journal", work: "Work", health: "Health", groceries: "Groceries", kids: "Kids",
-};
 
 function formatAmount(value: number, currency: string) {
   return new Intl.NumberFormat("en-BE", { style: "currency", currency }).format(value);
@@ -20,9 +17,9 @@ function factAmount(fact: LifeFact) {
   return fact.currency ? formatAmount(fact.amount, fact.currency) : String(fact.amount);
 }
 
-function FactIcon({ area }: { area: Area }) {
-  const glyph: Record<Area, string> = { finance: "€", journal: "✎", work: "▣", health: "✦", groceries: "◒", kids: "♡" };
-  return <div className={`life-feed-icon ${area}`} aria-hidden="true">{glyph[area]}</div>;
+function FactIcon({ area, name }: { area: string; name: string }) {
+  const glyph: Record<string, string> = { finance: "€", journal: "✎", work: "▣", health: "✦", groceries: "◒", kids: "♡" };
+  return <div className={`life-feed-icon ${area}`} aria-hidden="true">{glyph[area] ?? name.slice(0, 1).toUpperCase()}</div>;
 }
 
 type FeedItem =
@@ -31,7 +28,7 @@ type FeedItem =
 
 async function loadPeriod(params: Record<string, string | string[] | undefined>, today: string, weekFrom: string) {
   try {
-    const history = await getLifeHistory();
+    const [history, categories] = await Promise.all([getLifeHistory(), listCategories()]);
     const hasMultipleDays = history.dates.length > 1;
     const weekHasHistory = history.firstCapturedAt !== null
       && dateInBrussels(history.firstCapturedAt) <= weekFrom
@@ -46,7 +43,7 @@ async function loadPeriod(params: Record<string, string | string[] | undefined>,
     const from = view === "week" ? weekFrom : view === "day" ? day : view === "range" ? (requestedFrom <= requestedTo ? requestedFrom : requestedTo) : today;
     const to = view === "week" ? today : view === "day" ? day : view === "range" ? (requestedFrom <= requestedTo ? requestedTo : requestedFrom) : today;
     const records = await getLifeRange(from, to);
-    return { history, hasMultipleDays, weekHasHistory, view, day, from, to, ...records };
+    return { history, categories, hasMultipleDays, weekHasHistory, view, day, from, to, ...records };
   } catch {
     return null;
   }
@@ -77,12 +74,14 @@ export default async function MyLife({ searchParams }: PageProps<"/my-life">) {
   const now = new Date();
   const today = todayInBrussels(now);
   const weekFrom = daysBefore(today, 6);
-  const area = typeof params.area === "string" && areas.includes(params.area as Area) ? params.area as Area : undefined;
   const period = await loadPeriod(params, today, weekFrom);
   if (!period) return <div className="life-shell"><aside className="life-sidebar"><Link href="/" className="life-brand">GSD<span className="life-brand-dot">.</span></Link></aside><main className="life-main"><header className="life-topbar">My Life</header><div className="life-content"><div className="life-heading"><div><h1>My Life</h1><p>Your private dashboard</p></div></div><div className="life-empty"><div>✳</div><h3>Data is not available yet</h3><p>Check the GSD MongoDB connection in this Vercel project, then refresh this page.</p></div></div></main></div>;
-  const { history, hasMultipleDays, weekHasHistory, view, day, from, to, entries, facts } = period;
+  const { history, categories, hasMultipleDays, weekHasHistory, view, day, from, to, entries, facts } = period;
+  const selectedCategory = typeof params.area === "string" ? categories.find((category) => category._id === params.area) : undefined;
+  const area = selectedCategory?._id;
+  const nameById = Object.fromEntries(categories.map((category) => [category._id, category.name])) as Record<string, string>;
 
-    const counts = Object.fromEntries(areas.map((name) => [name, name === "journal" ? entries.length : facts.filter((fact) => fact.area === name).length])) as Record<Area, number>;
+    const counts = Object.fromEntries(categories.map((category) => [category._id, category._id === "journal" ? entries.length : facts.filter((fact) => fact.area === category._id).length])) as Record<string, number>;
     const expenses = facts.filter((fact) => fact.area === "finance" && fact.kind === "expense" && fact.amount !== null);
     const totals = expenses.reduce<Record<string, number>>((result, fact) => {
       const currency = fact.currency ?? "UNSPECIFIED";
@@ -99,7 +98,7 @@ export default async function MyLife({ searchParams }: PageProps<"/my-life">) {
       ...visibleFacts.map((fact) => ({ type: "fact" as const, fact, date: fact.occurredAt, createdAt: fact.createdAt })),
     ].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt) || (a.type === "entry" ? -1 : 1));
 
-    function href(nextArea: Area | undefined, nextView = view) {
+    function href(nextArea: string | undefined, nextView = view) {
       const query = new URLSearchParams();
       if (nextArea) query.set("area", nextArea);
       if (nextView !== "today") query.set("view", nextView);
@@ -126,15 +125,15 @@ export default async function MyLife({ searchParams }: PageProps<"/my-life">) {
           </div>
           <div className="life-sidebar-group">
             <span className="life-sidebar-caption">Corners of life</span>
-            {areas.map((name) => <Link key={name} className={area === name ? "life-nav active" : "life-nav"} href={href(name)}><span className={`life-nav-mark ${name}`} />{labels[name]} <small>{counts[name]}</small></Link>)}
+            {categories.map((category: LifeCategory) => <Link key={category._id} className={area === category._id ? "life-nav active" : "life-nav"} href={href(category._id)}><span className={`life-nav-mark ${category._id}`} />{category.name} <small>{counts[category._id]}</small></Link>)}
           </div>
           <div className="life-sidebar-bottom"><span className="life-online-dot" /> Private workspace <form action="/api/session/logout" method="post"><button type="submit">Sign out</button></form></div>
         </aside>
         <main className="life-main">
-          <header className="life-topbar"><span>My Life / {area ? labels[area] : "Overview"}</span><div className="life-topbar-actions"><a href={href(area)}>Refresh ↻</a><Link href="/">About GSD ↗</Link></div></header>
+          <header className="life-topbar"><span>My Life / {selectedCategory?.name ?? "Overview"}</span><div className="life-topbar-actions"><a href={href(area)}>Refresh ↻</a><Link href="/">About GSD ↗</Link></div></header>
           <div className="life-content">
             <div className="life-heading">
-              <div><p className="life-eyebrow">Your life, as it unfolds</p><h1>{area ? labels[area] : "My Life"}</h1><p>{area ? `What GSD has saved in ${labels[area].toLowerCase()} for this period.` : "What you shared, and what GSD understood."}</p></div>
+              <div><p className="life-eyebrow">Your life, as it unfolds</p><h1>{selectedCategory?.name ?? "My Life"}</h1><p>{selectedCategory ? `What GSD has saved in ${selectedCategory.name.toLowerCase()} for this period.` : "What you shared, and what GSD understood."}</p></div>
               <div className="life-clock"><span>{displayDate(today)}</span><strong>As of {timeInBrussels(now)}</strong><small>Brussels time</small></div>
             </div>
 
@@ -168,10 +167,10 @@ export default async function MyLife({ searchParams }: PageProps<"/my-life">) {
               </div>
             </section>}
 
-            <section className="life-records"><div className="life-section-heading"><div><p className="life-section-kicker">IN YOUR OWN WORDS</p><h2>{area === "journal" ? "Your notes" : area === "finance" ? "Other finance records" : area ? `${labels[area]} records` : "Your day"}</h2></div><span>{feed.length} item{feed.length === 1 ? "" : "s"}</span></div>
-              {feed.length === 0 ? <div className="life-empty"><div>✳</div><h3>{area ? `No ${labels[area].toLowerCase()} records here` : emptyTitle}</h3><p>{view === "today" ? "Ask askDavy in ChatGPT to save a life update. It will appear here when captured." : "Try another day or date range to see what you have saved."}</p></div> : <div className="life-feed">
-                {feed.map((item) => item.type === "entry" ? <article className="life-feed-item" key={item.entry._id}><FactIcon area="journal" /><div><span className="life-feed-meta">Journal · {displayDate(item.entry.occurredAt, { weekday: undefined })} · Captured {capturedTime(item.entry.createdAt)}</span><h3>{item.entry.text}</h3><p>{item.entry.extractionStatus === "failed" ? "Original note saved · Detail extraction failed; retry the note in ChatGPT" : item.entry.extractionStatus === "pending" ? "Original note saved · Organizing details" : "Original note"}</p></div></article>
-                  : <article className="life-feed-item" key={item.fact._id}><FactIcon area={item.fact.area} /><div><span className="life-feed-meta">{labels[item.fact.area]} · {displayDate(item.fact.occurredAt, { weekday: undefined })}</span><h3>{item.fact.title}</h3><p>{item.fact.detail || `“${item.fact.sourceQuote}”`}</p></div>{factAmount(item.fact) && <strong className="life-feed-amount">{factAmount(item.fact)}</strong>}</article>)}
+            <section className="life-records"><div className="life-section-heading"><div><p className="life-section-kicker">IN YOUR OWN WORDS</p><h2>{area === "journal" ? "Your notes" : area === "finance" ? "Other finance records" : selectedCategory ? `${selectedCategory.name} records` : "Your day"}</h2></div><span>{feed.length} item{feed.length === 1 ? "" : "s"}</span></div>
+              {feed.length === 0 ? <div className="life-empty"><div>✳</div><h3>{selectedCategory ? `No ${selectedCategory.name.toLowerCase()} records here` : emptyTitle}</h3><p>{view === "today" ? "Ask askDavy in ChatGPT to save a life update. It will appear here when captured." : "Try another day or date range to see what you have saved."}</p></div> : <div className="life-feed">
+                {feed.map((item) => item.type === "entry" ? <article className="life-feed-item" key={item.entry._id}><FactIcon area="journal" name="Journal" /><div><span className="life-feed-meta">Journal · {displayDate(item.entry.occurredAt, { weekday: undefined })} · Captured {capturedTime(item.entry.createdAt)}</span><h3>{item.entry.text}</h3><p>{item.entry.extractionStatus === "failed" ? "Original note saved · Detail extraction failed; retry the note in ChatGPT" : item.entry.extractionStatus === "pending" ? "Original note saved · Organizing details" : "Original note"}</p></div></article>
+                  : <article className="life-feed-item" key={item.fact._id}><FactIcon area={item.fact.area} name={nameById[item.fact.area] ?? item.fact.area} /><div><span className="life-feed-meta">{nameById[item.fact.area] ?? item.fact.area} · {displayDate(item.fact.occurredAt, { weekday: undefined })}</span><h3>{item.fact.title}</h3><p>{item.fact.detail || `“${item.fact.sourceQuote}”`}</p></div>{factAmount(item.fact) && <strong className="life-feed-amount">{factAmount(item.fact)}</strong>}</article>)}
               </div>}
             </section>
           </div>

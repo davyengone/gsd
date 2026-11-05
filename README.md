@@ -41,6 +41,11 @@ Available tools:
 - `capture_life_update` — one call for the original note; GSD extracts and saves it.
 - `get_day_summary` — a date's notes, facts, expenses, and per-currency totals.
 - `list_life_records` — browse one area or date.
+- `list_life_categories` — discover the category names, IDs, and descriptions.
+- `create_life_category` — add a category from a spoken or written request.
+- `update_life_category` — refine its name or description without changing its ID.
+
+Category definitions live in MongoDB's `life_categories` collection. GSD seeds Finance, Journal, Work, Health, Groceries, and Kids, then reads the collection for each extraction and dashboard request. Say “askDavy, add a Travel category for trips, transport, and places I visit,” then “askDavy, save this: I flew to Brussels today.” New records can use Travel immediately; earlier records are not reclassified automatically. An expense can belong to both Finance and Travel.
 
 The dashboard at `/my-life` asks for `GSD_MCP_TOKEN` once and sets an HTTP-only session cookie. This is single-user authentication. Replace it and the path-token MCP authentication with OAuth before offering the app to other users.
 

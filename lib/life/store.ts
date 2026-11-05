@@ -1,8 +1,9 @@
 import { createHash, randomUUID } from "node:crypto";
 import { ensureLifeIndexes, lifeDb } from "./db";
 import { extractFacts } from "./extract";
+import { listCategories } from "./categories";
 import { logMcp } from "@/lib/mcp/logger";
-import type { Area, CaptureInput, LifeEntry, LifeFact } from "./schema";
+import type { CaptureInput, LifeEntry, LifeFact } from "./schema";
 
 function todayBrussels() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -41,7 +42,8 @@ export async function captureLife(input: CaptureInput) {
   }
 
   try {
-    const extracted = await extractFacts(entry.text, entry.occurredAt);
+    const categories = await listCategories();
+    const extracted = await extractFacts(entry.text, entry.occurredAt, categories);
     const facts: LifeFact[] = extracted.map((fact) => ({
       ...fact, _id: randomUUID(), entryId: entry._id, createdAt: entry.createdAt,
     }));
@@ -57,7 +59,7 @@ export async function captureLife(input: CaptureInput) {
   }
 }
 
-export async function listLife(options: { area?: Area; date?: string; limit?: number } = {}) {
+export async function listLife(options: { area?: string; date?: string; limit?: number } = {}) {
   const db = await lifeDb();
   const limit = Math.min(Math.max(options.limit ?? 50, 1), 100);
   const facts = await db.collection<LifeFact>("life_facts")

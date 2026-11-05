@@ -1,7 +1,17 @@
 import { z } from "zod";
 
-export const areas = ["finance", "journal", "work", "health", "groceries", "kids"] as const;
-export type Area = (typeof areas)[number];
+export const categoryIdSchema = z.string().regex(/^[a-z][a-z0-9-]{1,63}$/);
+
+export type LifeCategory = {
+  _id: string;
+  name: string;
+  nameKey: string;
+  description: string;
+  order: number;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export const captureInputSchema = z.object({
   text: z.string().trim().min(3).max(10000),
@@ -10,7 +20,7 @@ export const captureInputSchema = z.object({
 });
 
 export const factSchema = z.object({
-  area: z.enum(areas),
+  area: categoryIdSchema,
   kind: z.string().trim().min(1).max(50),
   title: z.string().trim().min(1).max(180),
   detail: z.string().trim().max(1000),
@@ -21,7 +31,6 @@ export const factSchema = z.object({
   count: z.number().int().positive().max(1000).nullable(),
 });
 
-export const extractionSchema = z.object({ facts: z.array(factSchema).max(40) });
 export type Fact = z.infer<typeof factSchema>;
 export type CaptureInput = z.infer<typeof captureInputSchema>;
 
