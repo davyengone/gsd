@@ -19,7 +19,7 @@ export const mcpHandler = createMcpHandler(
       version: "0.1.0",
     },
     instructions:
-      "GetShitDone finance skills. Before calling log_expense, confirm implausible amounts (e.g. $1380 for breakfast likely means $13.80), default currency to EUR when unspecified, and default occurredAt to today. Never invent amounts, merchants, or dates. Echo back what was written.",
+      "GSD stores private life notes. When the user asks to remember, journal, log, or track a note, call capture_life_update once with the original words. GSD extracts and files facts internally. For questions about saved data, use get_day_summary or list_life_records. Never claim an unreported expense or silently save ordinary chat. Write calls may require ChatGPT confirmation.",
     verboseLogs: process.env.NODE_ENV === "development",
     onEvent: handleMcpEvent,
   },

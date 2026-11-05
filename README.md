@@ -1,98 +1,49 @@
-# GetShitDone
+# GSD
 
-Personal productivity skills for ChatGPT / Codex. This repo hosts:
+A private life log connected to ChatGPT through one MCP server. ChatGPT sends a user's original note to `capture_life_update`; GSD uses the AI SDK to extract supported facts and saves both the note and facts in MongoDB. The same MCP server answers queries from saved records. `/my-life` shows the records in a private dashboard.
 
-1. **Skills** — `SKILL.md` workflow instructions under [`skills/`](./skills/)
-2. **MCP server** — tools that actually write to your apps (`/api/mcp/<token>`)
+## Data flow
 
-v1 ships the **finance / log-expense** skill: say *"I spent €13.80 on breakfast"* and ChatGPT calls `log_expense`.
+`ChatGPT → /api/mcp/<GSD_MCP_TOKEN> → capture_life_update → AI SDK → MongoDB (life_entries, life_facts) → /my-life`
 
-## Architecture
-
-| Layer | Role |
-| --- | --- |
-| `skills/**/SKILL.md` | When to activate, sanity checks, defaults, confirmation |
-| `lib/skills/**` | Registers MCP tools for each skill |
-| `app/api/mcp/[token]/route.ts` | Streamable HTTP MCP endpoint + secret-path auth |
-| `lib/finance/client.ts` | Adapter to `finance.davy.build` (`stub` or `http`) |
+The original note is always retained. Each extracted fact has `sourceQuote` so a user can trace it back to their words. Expenses are counted only when an amount and spending context are explicit. Amounts without a currency remain unspecified and are not mixed into EUR totals.
 
 ## Setup
 
 ```bash
 npm install
 cp .env.example .env.local
-# Set GSD_MCP_TOKEN to a 32+ char secret (see .env.example)
 npm run dev
 ```
 
-MCP URL (local):
+Required environment variables:
 
-```
-http://localhost:3000/api/mcp/<GSD_MCP_TOKEN>
-```
+| Name | Purpose |
+| --- | --- |
+| `GSD_MCP_TOKEN` | Private token of at least 32 characters, used in the MCP URL and to unlock `/my-life`. |
+| `MONGODB_URI` | MongoDB connection URI with read and write access to the GSD database. |
+| `ANTHROPIC_API_KEY` | Anthropic API key for extraction through the Vercel AI SDK's Anthropic provider. |
 
-### Env vars
+Optional: `MONGODB_DB` (default `gsd`), `GSD_EXTRACTION_MODEL` (default `claude-sonnet-4-6` for the direct Anthropic provider).
 
-| Variable | Required | Notes |
-| --- | --- | --- |
-| `GSD_MCP_TOKEN` | yes | Path secret; min 32 chars; fail-closed if missing |
-| `GSD_MAX_EXPENSE_AMOUNT` | no | Default `10000` |
-| `FINANCE_MODE` | no | `stub` (default) or `http` |
-| `FINANCE_API_URL` | if http | e.g. `https://finance.davy.build/api/` |
-| `FINANCE_API_KEY` | if http | Bearer token for the finance API |
+Create a private token with `openssl rand -base64 32 | tr '+/' '-_' | tr -d '='`. Keep it out of Git. Use a separate MongoDB database and credentials for GSD.
+
+## Connect in ChatGPT
+
+The custom MCP plugin is installed in ChatGPT as **askDavy**. For another ChatGPT account, add a custom MCP server with this **Streamable HTTP** URL:
+
+`https://gsd.davy.build/api/mcp/<GSD_MCP_TOKEN>`
+
+Choose **No authentication** for this private, single-user connection; the URL token is the credential. Connect the plugin in ChatGPT. Say “Use askDavy to capture this day: …”, then ask “Use askDavy: how much did 2026-11-05 cost?” ChatGPT may ask to confirm the write action. A plugin tool is selected by the model when relevant; GSD does not receive every ChatGPT message in the background.
+
+Available tools:
+
+- `capture_life_update` — one call for the original note; GSD extracts and saves it.
+- `get_day_summary` — a date's notes, facts, expenses, and per-currency totals.
+- `list_life_records` — browse one area or date.
+
+The dashboard at `/my-life` asks for `GSD_MCP_TOKEN` once and sets an HTTP-only session cookie. This is single-user authentication. Replace it and the path-token MCP authentication with OAuth before offering the app to other users.
 
 ## Local verification
 
-```bash
-npx @modelcontextprotocol/inspector
-```
-
-Connect with **Streamable HTTP** to `http://localhost:3000/api/mcp/<token>`. Confirm:
-
-- Initialize succeeds
-- Tools: `log_expense`, `list_expenses`
-- Valid `log_expense` returns a stubbed record
-- Amount over `GSD_MAX_EXPENSE_AMOUNT` is rejected
-- Wrong token returns `404`
-
-## Production
-
-Deployed at: [https://getshitdone-beta.vercel.app](https://getshitdone-beta.vercel.app)
-
-MCP endpoint shape:
-
-```
-https://getshitdone-beta.vercel.app/api/mcp/<GSD_MCP_TOKEN>
-```
-
-(Use the value of `GSD_MCP_TOKEN` from Vercel env / `.env.local` — never commit it.)
-
-## Connect to ChatGPT (developer mode)
-
-Requires Plus / Pro / Business / Enterprise on web.
-
-1. ChatGPT → **Settings** → **Apps** → **Advanced** → enable **Developer mode**.
-2. Create a developer-mode app / connector:
-   - URL: `https://getshitdone-beta.vercel.app/api/mcp/<GSD_MCP_TOKEN>`
-   - Authentication: **No authentication** (the secret is in the path)
-3. Enable the app in a chat and try: *I spent 13.80 EUR on breakfast*.
-
-**Security note:** a URL-embedded secret authenticates the connector, not end users. Fine for private single-user use. Move to OAuth 2.1 (`withMcpAuth` from `mcp-handler`) before anyone else installs this.
-
-## Adding a skill
-
-1. Create `skills/<domain>/<name>/SKILL.md` with `name` + `description` frontmatter.
-2. Create `lib/skills/<domain>/<name>.ts` that exports a `Skill` and registers tools.
-3. Add it to `ALL_SKILLS` in [`lib/skills/registry.ts`](./lib/skills/registry.ts).
-
-## Wiring the real finance API
-
-When `finance.davy.build` exposes a write endpoint:
-
-```bash
-FINANCE_MODE=http
-FINANCE_API_URL=https://finance.davy.build/api/
-FINANCE_API_KEY=...
-```
-
-Only [`lib/finance/client.ts`](./lib/finance/client.ts) needs to match the real payload shape.
+Run `npx @modelcontextprotocol/inspector`, select Streamable HTTP, and connect to `http://localhost:3000/api/mcp/<GSD_MCP_TOKEN>`. Verify initialization, the three tools, an invalid-token `404`, a capture, and a date summary. A successful write requires both MongoDB and Anthropic configuration.

@@ -1,6 +1,6 @@
 {
   "name": "getshitdone",
   "version": "0.1.0",
-  "description": "Personal productivity skills that take action in your apps — starting with finance expense logging.",
+  "description": "Capture and explore private life notes through GSD's MCP tools.",
   "skills": "./skills/"
 }
