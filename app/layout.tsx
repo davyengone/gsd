@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const display = Space_Grotesk({
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {`try{if(localStorage.getItem('gsd-theme')==='dark')document.documentElement.dataset.theme='dark'}catch{}`}
         </Script>
         {children}
+        <Analytics />
       </body>
     </html>
   );
