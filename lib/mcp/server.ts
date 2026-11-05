@@ -19,7 +19,7 @@ export const mcpHandler = createMcpHandler(
       version: "0.1.0",
     },
     instructions:
-      "GSD stores private life notes. When the user asks to remember, journal, log, or track a note, call capture_life_update once with the original words. GSD extracts and files facts internally. For questions about saved data, use get_day_summary or list_life_records. Never claim an unreported expense or silently save ordinary chat. Write calls may require ChatGPT confirmation.",
+      "GSD stores private life notes and configurable categories. When the user asks to remember, journal, log, or track a note, call capture_life_update once with the original words. GSD extracts and files facts internally using the current categories. When the user explicitly asks for a new category, call create_life_category; use list_life_categories to check what already exists, and update_life_category when asked to refine one. For questions about saved data, use get_day_summary or list_life_records. Never claim an unreported expense or silently save ordinary chat. Write calls may require ChatGPT confirmation.",
     verboseLogs: process.env.NODE_ENV === "development",
     onEvent: handleMcpEvent,
   },
