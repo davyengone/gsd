@@ -44,6 +44,8 @@ Available tools:
 
 The dashboard at `/my-life` asks for `GSD_MCP_TOKEN` once and sets an HTTP-only session cookie. This is single-user authentication. Replace it and the path-token MCP authentication with OAuth before offering the app to other users.
 
+The dashboard opens on **Today** in Europe/Brussels time. All amounts, counts, and records follow the selected period. Once notes cover more than one date, it offers a recorded day and a custom date range. The **7 days** view appears after at least seven calendar days of use and records on at least two days in that window. Event dates come from the note; times shown beside notes are capture times.
+
 ## Local verification
 
 Run `npx @modelcontextprotocol/inspector`, select Streamable HTTP, and connect to `http://localhost:3000/api/mcp/<GSD_MCP_TOKEN>`. Verify initialization, the three tools, an invalid-token `404`, a capture, and a date summary. A successful write requires both MongoDB and Anthropic configuration.

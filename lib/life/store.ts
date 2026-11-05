@@ -84,21 +84,22 @@ export async function getDaySummary(date: string) {
   return { date, totals, expenses, facts, entries, expenseCount: expenses.length };
 }
 
-export async function getLifeStats() {
+export async function getLifeHistory() {
   const db = await lifeDb();
-  const facts = db.collection<LifeFact>("life_facts");
-  const counts = await Promise.all([
-    db.collection<LifeEntry>("life_entries").countDocuments(),
-    ...(["finance", "work", "health", "groceries", "kids"] as const).map((area) => facts.countDocuments({ area })),
-    facts.countDocuments(),
-    facts.countDocuments({ area: "finance", kind: "expense", currency: "EUR" }),
+  const entries = db.collection<LifeEntry>("life_entries");
+  const [first, dates] = await Promise.all([
+    entries.find().sort({ createdAt: 1 }).limit(1).next(),
+    entries.distinct("occurredAt"),
   ]);
-  const total = await facts.aggregate<{ _id: null; amount: number }>([
-    { $match: { area: "finance", kind: "expense", currency: "EUR" } },
-    { $group: { _id: null, amount: { $sum: "$amount" } } },
-  ]).next();
-  return {
-    counts: { journal: counts[0], finance: counts[1], work: counts[2], health: counts[3], groceries: counts[4], kids: counts[5] },
-    factCount: counts[6], eurExpenseCount: counts[7], eurTotal: total?.amount ?? 0,
-  };
+  return { firstCapturedAt: first?.createdAt ?? null, dates: dates.sort() };
+}
+
+export async function getLifeRange(from: string, to: string) {
+  const db = await lifeDb();
+  const date = { $gte: from, $lte: to };
+  const [entries, facts] = await Promise.all([
+    db.collection<LifeEntry>("life_entries").find({ occurredAt: date }).sort({ occurredAt: -1, createdAt: -1 }).toArray(),
+    db.collection<LifeFact>("life_facts").find({ occurredAt: date }).sort({ occurredAt: -1, createdAt: -1 }).toArray(),
+  ]);
+  return { entries, facts };
 }
