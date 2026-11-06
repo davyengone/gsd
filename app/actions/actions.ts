@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { hasDashboardSession } from "@/lib/auth/session";
 import { assertWithinRateLimit } from "@/lib/auth/rate-limit";
-import { createAction, updateAction } from "@/lib/actions/store";
+import { createAction, statuses, updateAction } from "@/lib/actions/store";
+import { z } from "zod";
 
 function fields(form: FormData) {
   return {
@@ -30,9 +31,11 @@ export async function updateActionFromForm(form: FormData) {
   revalidatePath("/actions");
 }
 
-export async function moveActionFromForm(form: FormData) {
+export async function moveActionToLane(id: string, destination: string) {
   if (!(await hasDashboardSession())) throw new Error("Unauthorized");
   assertWithinRateLimit("dashboard_move_action");
-  await updateAction(String(form.get("id") ?? ""), { status: String(form.get("status") ?? "") as "ideas" });
+  const status = z.enum(statuses).parse(destination);
+  const action = await updateAction(id, { status });
+  if (!action) throw new Error("Action not found");
   revalidatePath("/actions");
 }
