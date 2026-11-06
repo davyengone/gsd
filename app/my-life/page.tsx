@@ -126,6 +126,7 @@ export default async function MyLife({ searchParams }: PageProps<"/my-life">) {
           <div className="life-sidebar-group">
             <span className="life-sidebar-caption">Dashboard</span>
             <Link className={!area ? "life-nav active" : "life-nav"} href={href(undefined)} aria-current={!area ? "page" : undefined}><span>▦</span> My Life</Link>
+            <Link className="life-nav" href="/actions"><span>✓</span> Actions</Link>
           </div>
           <div className="life-sidebar-group">
             <span className="life-sidebar-caption">Your areas</span>
