@@ -1,6 +1,7 @@
 import { AreaIcon } from "@/components/AreaIcon";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SidebarToggle } from "@/components/SidebarToggle";
 import { hasDashboardSession } from "@/lib/auth/session";
 import { getLifeHistory, getLifeRange } from "@/lib/life/store";
 import { listCategories } from "@/lib/life/categories";
@@ -135,7 +136,7 @@ export default async function MyLife({ searchParams }: PageProps<"/my-life">) {
           <div className="life-sidebar-bottom"><span className="life-online-dot" /> Private workspace <form action="/api/session/logout" method="post"><button type="submit">Sign out</button></form></div>
         </aside>
         <main className="life-main">
-          <header className="life-topbar"><span><strong>My Life</strong> / {selectedCategory?.name ?? "Overview"}</span><div className="life-topbar-actions"><span>{timeInBrussels(now)} Brussels</span><a href={href(area)}>Refresh ↻</a><ThemeToggle/><Link href="/">About GSD</Link></div></header>
+          <header className="life-topbar"><div className="life-topbar-title"><SidebarToggle /><span><strong>My Life</strong> / {selectedCategory?.name ?? "Overview"}</span></div><div className="life-topbar-actions"><span>{timeInBrussels(now)} Brussels</span><a href={href(area)}>Refresh ↻</a><ThemeToggle/><Link href="/">About GSD</Link></div></header>
           <div className="life-content">
             <div className="life-heading">
               <div className="life-heading-copy"><p className="life-eyebrow"><span className="life-pulse" />{periodLabel}</p><h1>{selectedCategory?.name ?? (view === "today" ? "Today, so far." : periodTitle)}</h1><p>{selectedCategory ? selectedCategory.description : "One place for what you said, what happened, and what matters next."}</p><span className="life-heading-foot">{entries.length} {entries.length === 1 ? "note" : "notes"} saved <i /> As of {timeInBrussels(now)} Brussels time</span></div>
