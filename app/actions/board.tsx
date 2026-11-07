@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition, type DragEvent, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useOptimistic, useRef, useState, useTransition, type DragEvent, type KeyboardEvent, type PointerEvent } from "react";
 import type { ActionItem, ActionStatus } from "@/lib/actions/store";
 import { moveActionToLane, updateActionFromForm } from "./actions";
 
@@ -13,9 +13,12 @@ type Dragging = { id: string; target: ActionStatus };
 type TouchPosition = { x: number; y: number };
 
 export function ActionsBoard({ items, today }: { items: ActionItem[]; today: string }) {
+  const [visibleItems, moveOptimistically] = useOptimistic(
+    items,
+    (current: ActionItem[], move: { id: string; status: ActionStatus }) => current.map((item) => item._id === move.id ? { ...item, status: move.status } : item),
+  );
   const [dragging, setDragging] = useState<Dragging | null>(null);
   const [touchPosition, setTouchPosition] = useState<TouchPosition | null>(null);
-  const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const draggingIdRef = useRef<string | null>(null);
@@ -43,17 +46,15 @@ export function ActionsBoard({ items, today }: { items: ActionItem[]; today: str
 
   function commitMove(id: string, destination: ActionStatus) {
     const item = items.find((candidate) => candidate._id === id);
-    clearDrag();
-    if (!item || item.status === destination || isPending) return;
+    if (!item || item.status === destination || isPending) { clearDrag(); return; }
     setError(null);
-    setPendingId(id);
     startTransition(async () => {
+      moveOptimistically({ id, status: destination });
+      clearDrag();
       try {
         await moveActionToLane(id, destination);
       } catch {
         setError(`Could not move “${item.title}”. Try again.`);
-      } finally {
-        setPendingId(null);
       }
     });
   }
@@ -130,10 +131,10 @@ export function ActionsBoard({ items, today }: { items: ActionItem[]; today: str
   return <>
     <p id="actions-drag-help" className="actions-drag-help">Drag a card into another lane. On touch screens, use the ⠿ handle. Keyboard: Space to pick up, arrow keys to choose a lane, Space to drop.</p>
     {error && <p className="actions-drag-error" role="alert">{error}</p>}
-    <div className="actions-drag-announcement" aria-live="polite">{dragging && activeItem ? `${activeItem.title}: ${labels[dragging.target]} selected. Press Space to drop or Escape to cancel.` : pendingId ? "Saving new lane." : ""}</div>
+    <div className="actions-drag-announcement" aria-live="polite">{dragging && activeItem ? `${activeItem.title}: ${labels[dragging.target]} selected. Press Space to drop or Escape to cancel.` : isPending ? "Saving new lane." : ""}</div>
     <section aria-label="Action board" className="actions-board">
       {statuses.map((status) => {
-        const laneItems = items.filter((item) => item.status === status);
+        const laneItems = visibleItems.filter((item) => item.status === status);
         const target = dragging?.target === status && items.find((item) => item._id === dragging.id)?.status !== status;
         return <div
           className={`actions-lane actions-lane-${status}${target ? " actions-lane-target" : ""}`}
@@ -144,7 +145,7 @@ export function ActionsBoard({ items, today }: { items: ActionItem[]; today: str
         >
           <div className="actions-lane-heading"><span className="actions-lane-dot" /><h2>{labels[status]}</h2><small>{laneItems.length}</small></div>
           <div className="actions-cards">
-            {laneItems.length ? laneItems.map((item) => <article className={`actions-card${dragging?.id === item._id ? " actions-card-dragging" : ""}${pendingId === item._id ? " actions-card-saving" : ""}`} key={item._id} draggable={!isPending} onDragStart={(event) => startNativeDrag(event, item)} onDragEnd={clearDrag}>
+            {laneItems.length ? laneItems.map((item) => <article className={`actions-card${dragging?.id === item._id ? " actions-card-dragging" : ""}`} key={item._id} draggable={!isPending} onDragStart={(event) => startNativeDrag(event, item)} onDragEnd={clearDrag}>
               <div className="actions-card-top"><span>{item.dueDate ? item.dueDate < today && status !== "done" ? "Overdue" : item.dueDate === today && status !== "done" ? "Due today" : "Due " + item.dueDate : "No date"}</span>
                 <button
                   type="button"
