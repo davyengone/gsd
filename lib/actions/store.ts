@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { lifeDb } from "@/lib/life/db";
 import type { LifeEntry } from "@/lib/life/schema";
+import { tagColors } from "./tag-colors";
 
 export const statuses = ["ideas", "planned", "in_progress", "done"] as const;
 export type ActionStatus = typeof statuses[number];
@@ -12,9 +13,10 @@ export const actionInput = z.object({
   status: z.enum(statuses).default("ideas"),
   dueDate: date.nullable().default(null),
   tags: z.array(z.string().trim().min(1).max(32)).max(8).default([]),
+  tagColors: z.record(z.string().max(32), z.enum(tagColors)).default({}),
   sourceEntryId: z.string().uuid().nullable().default(null),
 });
-export const actionPatch = actionInput.pick({ title: true, detail: true, status: true, dueDate: true, tags: true }).partial().refine((value) => Object.keys(value).length > 0);
+export const actionPatch = actionInput.pick({ title: true, detail: true, status: true, dueDate: true, tags: true, tagColors: true }).partial().refine((value) => Object.keys(value).length > 0);
 export type ActionItem = z.infer<typeof actionInput> & { _id: string; createdAt: string; updatedAt: string; completedAt: string | null };
 
 async function collection() {
@@ -54,4 +56,9 @@ export async function updateAction(id: string, patch: z.input<typeof actionPatch
   const now = new Date().toISOString();
   const completedAt = value.status === undefined ? existing.completedAt : value.status === "done" ? existing.completedAt ?? now : null;
   return items.findOneAndUpdate({ _id: id }, { $set: { ...value, completedAt, updatedAt: now } }, { returnDocument: "after" });
+}
+
+export async function deleteAction(id: string) {
+  z.string().uuid().parse(id);
+  return (await collection()).deleteOne({ _id: id });
 }
