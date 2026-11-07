@@ -18,6 +18,7 @@ export function ActionsBoard({ items, today }: { items: ActionItem[]; today: str
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const draggingIdRef = useRef<string | null>(null);
   const touchRef = useRef<{ id: string; x: number; y: number } | null>(null);
   const frameRef = useRef<number | null>(null);
 
@@ -32,6 +33,7 @@ export function ActionsBoard({ items, today }: { items: ActionItem[]; today: str
   }
 
   function clearDrag() {
+    draggingIdRef.current = null;
     touchRef.current = null;
     if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     frameRef.current = null;
@@ -67,12 +69,13 @@ export function ActionsBoard({ items, today }: { items: ActionItem[]; today: str
     frameRef.current = requestAnimationFrame(autoScroll);
   }
 
-  function startNativeDrag(event: DragEvent<HTMLButtonElement>, item: ActionItem) {
+  function startNativeDrag(event: DragEvent<HTMLElement>, item: ActionItem) {
     if (isPending) { event.preventDefault(); return; }
+    if ((event.target as HTMLElement).closest(".actions-edit")) { event.preventDefault(); return; }
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", item._id);
-    const card = event.currentTarget.closest<HTMLElement>(".actions-card");
-    if (card) event.dataTransfer.setDragImage(card, 24, 20);
+    event.dataTransfer.setDragImage(event.currentTarget, 24, 20);
+    draggingIdRef.current = item._id;
     setError(null);
     setDragging({ id: item._id, target: item.status });
   }
@@ -125,7 +128,7 @@ export function ActionsBoard({ items, today }: { items: ActionItem[]; today: str
 
   const activeItem = dragging ? items.find((item) => item._id === dragging.id) : null;
   return <>
-    <p id="actions-drag-help" className="actions-drag-help">Drag a card by its handle into another lane. Keyboard: Space to pick up, arrow keys to choose a lane, Space to drop.</p>
+    <p id="actions-drag-help" className="actions-drag-help">Drag a card into another lane. On touch screens, use the ⠿ handle. Keyboard: Space to pick up, arrow keys to choose a lane, Space to drop.</p>
     {error && <p className="actions-drag-error" role="alert">{error}</p>}
     <div className="actions-drag-announcement" aria-live="polite">{dragging && activeItem ? `${activeItem.title}: ${labels[dragging.target]} selected. Press Space to drop or Escape to cancel.` : pendingId ? "Saving new lane." : ""}</div>
     <section aria-label="Action board" className="actions-board">
@@ -136,12 +139,12 @@ export function ActionsBoard({ items, today }: { items: ActionItem[]; today: str
           className={`actions-lane actions-lane-${status}${target ? " actions-lane-target" : ""}`}
           data-action-lane={status}
           key={status}
-          onDragOver={(event) => { if (!dragging) return; event.preventDefault(); event.dataTransfer.dropEffect = "move"; if (dragging.target !== status) setDragging({ ...dragging, target: status }); }}
-          onDrop={(event) => { event.preventDefault(); const id = event.dataTransfer.getData("text/plain"); if (id) commitMove(id, status); }}
+          onDragOver={(event) => { if (!draggingIdRef.current) return; event.preventDefault(); event.dataTransfer.dropEffect = "move"; if (dragging?.target !== status) setDragging((current) => current ? { ...current, target: status } : current); }}
+          onDrop={(event) => { event.preventDefault(); const id = event.dataTransfer.getData("text/plain") || draggingIdRef.current; if (id) commitMove(id, status); }}
         >
           <div className="actions-lane-heading"><span className="actions-lane-dot" /><h2>{labels[status]}</h2><small>{laneItems.length}</small></div>
           <div className="actions-cards">
-            {laneItems.length ? laneItems.map((item) => <article className={`actions-card${dragging?.id === item._id ? " actions-card-dragging" : ""}${pendingId === item._id ? " actions-card-saving" : ""}`} key={item._id}>
+            {laneItems.length ? laneItems.map((item) => <article className={`actions-card${dragging?.id === item._id ? " actions-card-dragging" : ""}${pendingId === item._id ? " actions-card-saving" : ""}`} key={item._id} draggable={!isPending} onDragStart={(event) => startNativeDrag(event, item)} onDragEnd={clearDrag}>
               <div className="actions-card-top"><span>{item.dueDate ? item.dueDate < today && status !== "done" ? "Overdue" : item.dueDate === today && status !== "done" ? "Due today" : "Due " + item.dueDate : "No date"}</span>
                 <button
                   type="button"
@@ -150,8 +153,6 @@ export function ActionsBoard({ items, today }: { items: ActionItem[]; today: str
                   aria-label={`Drag ${item.title} to another lane`}
                   aria-describedby="actions-drag-help"
                   aria-pressed={dragging?.id === item._id}
-                  onDragStart={(event) => startNativeDrag(event, item)}
-                  onDragEnd={clearDrag}
                   onPointerDown={(event) => startTouchDrag(event, item)}
                   onPointerMove={moveTouch}
                   onPointerUp={endTouch}
