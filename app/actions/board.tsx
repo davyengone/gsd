@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useOptimistic, useRef, useState, useTransition, type DragEvent, type KeyboardEvent, type PointerEvent } from "react";
-import type { ActionItem, ActionStatus } from "@/lib/actions/store";
+import type { ActionItem, ActionStatus, ActionTag } from "@/lib/actions/store";
 import { moveActionToLane, updateActionFromForm } from "./actions";
-import { TagEditor } from "./tag-editor";
+import { TagPicker } from "./tag-picker";
 import { DeleteAction } from "./delete-action";
 
 const statuses: ActionStatus[] = ["ideas", "planned", "in_progress", "done"];
@@ -14,7 +14,7 @@ const labels: Record<ActionStatus, string> = {
 type Dragging = { id: string; target: ActionStatus };
 type TouchPosition = { x: number; y: number };
 
-export function ActionsBoard({ items, today }: { items: ActionItem[]; today: string }) {
+export function ActionsBoard({ items, today, tags }: { items: ActionItem[]; today: string; tags: ActionTag[] }) {
   const [visibleItems, moveOptimistically] = useOptimistic(
     items,
     (current: ActionItem[], move: { id: string; status: ActionStatus }) => current.map((item) => item._id === move.id ? { ...item, status: move.status } : item),
@@ -165,7 +165,7 @@ export function ActionsBoard({ items, today }: { items: ActionItem[]; today: str
               </div>
               <h3>{item.title}</h3>
               {item.detail && <p>{item.detail}</p>}
-              <TagEditor key={`${item._id}:${item.updatedAt}`} id={item._id} tags={item.tags} colors={item.tagColors ?? {}} />
+              <TagPicker key={`${item._id}:${item.updatedAt}`} id={item._id} selected={item.tags} available={tags} />
               <details className="actions-edit"><summary>Edit details</summary><form action={updateActionFromForm}><input type="hidden" name="id" value={item._id} /><label>Title<input name="title" required minLength={2} maxLength={180} defaultValue={item.title} /></label><label>Details<textarea name="detail" maxLength={2000} rows={3} defaultValue={item.detail} /></label><label>Due date<input name="dueDate" type="date" defaultValue={item.dueDate ?? ""} /></label><input type="hidden" name="status" value={item.status} /><button type="submit">Save changes</button></form></details>
               <DeleteAction id={item._id} title={item.title} />
             </article>) : <p className="actions-lane-empty">Drop a card here.</p>}
